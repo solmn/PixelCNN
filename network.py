@@ -70,9 +70,19 @@ def pixel_CNN(height, width, channel, parameters):
 
 
 
+inputs, output, conv2d_out_logits = pixel_CNN(height, width, channel, parameters)
 
+# Optimization
+loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=conv2d_out_logits, labels = inputs, name="loss"))
 
+optimizer = tf.train.RMSPropOptimizer(parameters['LEARNING_RATE'])
+grads_and_vars = optimizer.compute_gradients(loss)
 
+new_grads_and_vars = \
+    [(tf.clip_by_value(gv[0], -p.grad_clip, p.grad_clip), gv[1]) for gv in grads_and_vars]
+optim = optimizer.apply_gradients(new_grads_and_vars)
+
+sess = tf.Session()
 
 
 
