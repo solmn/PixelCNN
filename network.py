@@ -7,7 +7,7 @@ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 # Defining hyper parameters
 parameters = {
 	"BACH_SIZE": 100,
-	"HIDDEN_DIMS": 7,
+	"HIDDEN_DIMS": 16,
 	"RECURRENT_LENGTH": 7,
 	"OUT_HIDDEN_DIMS": 32,
 	"OUT_RECURRENT_LENGTH": 2,
@@ -48,6 +48,26 @@ def masked_conv2d(inputs, num_outputs, kernel_shape, mask_type, strides = [1,1],
 		outputs = tf.nn.bias_add(outputs, biases, name="output_plus_bias")
 		outputs = activation_function(outputs, name="output_with_activation_fucntion")
 		return outputs
+
+def pixel_CNN(height, width, channel, parameters):
+	input_shape = [None, height, width, channel]
+	inputs = tf.placeholder(tf.float32, input_shape)
+	scope = "conv_inputs"
+	conv_inputs = masked_conv2d(inputs, parameters['HIDDEN_DIMS'], [7, 7], "A", scope=scope)
+	last_hiden = conv_inputs
+
+	for idx in range(parameters['RECURRENT_LENGTH']):
+		scope = 'CONV%d' % idx
+		last_hiden = masked_conv2d(last_hiden, 3, [1, 1], "B", scope=scope)
+		print("Building %s" % scope)
+	for idx in range(parameters['OUT_RECURRENT_LENGTH']):
+		scope = "CONV_OUT%d" % idx
+		last_hiden = tf.nn.relu(masked_conv2d(last_hiden, parameters['HIDDEN_DIMS'], [1,1], "B", scope=scope))
+		print("Building %s" % scope)
+	conv2d_out_logits = masked_conv2d(last_hiden, 1, [1,1], "B", scope="conv2d_out_logits")
+	output = tf.nn.sigmod(conv2d_out_logits)
+	return inputs, output, conv2d_out_logits
+
 
 
 
